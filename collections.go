@@ -9,10 +9,11 @@ import (
 type Collection struct {
 	Name_		string		`json:"name"`
 	Type		string		`json:"type"`
+	Items		[]*Item		`json:"items,omitempty"`
 	SourceId	int		`json:"-"`
 	Directory	string		`json:"-"`
 	BaseUrl		string		`json:"-"`
-	Items		[]*Item		`json:"items,omitempty"`
+	HlsServer	string		`json:"-"`
 }
 
 // An 'item' can be a movie, a tv-show, a folder, etc.
@@ -158,6 +159,20 @@ func getItem(collName string, itemName string) (i *Item) {
 	for _, n := range c.Items {
 		if n.Name == itemName {
 			i = n
+			return
+		}
+	}
+	return
+}
+
+func getHlsServer(source string) (h string) {
+	id, err := strconv.ParseInt(source, 10, 64)
+	if err != nil {
+		return
+	}
+	for n, c := range config.Collections {
+		if (int64(c.SourceId) == id) {
+			h = config.Collections[n].HlsServer
 			return
 		}
 	}

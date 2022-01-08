@@ -34,22 +34,22 @@ var config = cfgMain{
 }
 
 func dataHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("1.\n")
 	if preCheck(w, r, "source", "path") {
 		return
 	}
-	vars := mux.Vars(r)
-	fmt.Printf("2.\n")
 
+	if hlsHandler(w, r) {
+		return
+	}
+
+	vars := mux.Vars(r)
 	dataDir := getDataDir(vars["source"])
 	if dataDir == "" {
 		http.Error(w, "404 Not Found", http.StatusNotFound)
 		return
 	}
-	fmt.Printf("3.\n")
 
 	fn := path.Clean(path.Join(dataDir, "/", vars["path"]))
-	fmt.Printf("4 %s.\n", fn)
 
 	var err error
 	var file http.File
@@ -100,11 +100,9 @@ func main() {
 	log.Printf("Parsing config file")
 
 	p, err := curlyconf.NewParser(configFile, curlyconf.ParserNL)
-	log.Printf("Parsing config file 2")
 	if err == nil {
 		err = p.Parse(&config)
 	}
-	log.Printf("Parsing config file 3")
 	if err != nil {
 		fmt.Println(err.(*curlyconf.ParseError).LongError())
 		return
