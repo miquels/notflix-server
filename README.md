@@ -1,7 +1,7 @@
 
-# Tink Server
+# Notflix Server
 
-This is the Tink backend server. It does a couple of things:
+This is the Notflix backend server. It does a couple of things:
 
 - HTTP server for data (movies, images, etc) at /\_data/<source-id>/path/...
 - Supports image resizing (?w=num&h=num&q=num) with a local cache
