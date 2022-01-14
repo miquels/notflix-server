@@ -34,14 +34,13 @@ var config = cfgMain{
 }
 
 func dataHandler(w http.ResponseWriter, r *http.Request) {
-	if preCheck(w, r, "source", "path") {
-		return
-	}
-
 	if hlsHandler(w, r) {
 		return
 	}
 
+	if preCheck(w, r, "source", "path") {
+		return
+	}
 	vars := mux.Vars(r)
 	dataDir := getDataDir(vars["source"])
 	if dataDir == "" {

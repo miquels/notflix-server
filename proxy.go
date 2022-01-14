@@ -67,14 +67,22 @@ func buildUrl(server string, path string) (*url.URL, error) {
 
 func hlsHandler(w http.ResponseWriter, r *http.Request) bool {
 	vars := mux.Vars(r)
-	if strings.Index(vars["path"], ".mp4/") < 0 {
+	path, pathOk := vars["path"]
+	if !pathOk {
+		return false;
+	}
+	source, sourceOk := vars["source"]
+	if !sourceOk {
+		return false;
+	}
+	if strings.Index(path, ".mp4/") < 0 {
 		return false
 	}
-	hlsServer := getHlsServer(vars["source"])
+	hlsServer := getHlsServer(source)
 	if hlsServer == "" {
 		return false
 	}
-	url, err := buildUrl(hlsServer, vars["path"])
+	url, err := buildUrl(hlsServer, path)
 	if err != nil {
 		http.Error(w, "Server Error", http.StatusInternalServerError)
 		return true
@@ -82,6 +90,7 @@ func hlsHandler(w http.ResponseWriter, r *http.Request) bool {
 
 	// will be added by remote server.
 	w.Header().Del("access-control-allow-origin")
+	w.Header().Del("access-control-allow-methods")
 
 	delHopHeaders(r.Header)
 
