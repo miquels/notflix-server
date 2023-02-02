@@ -75,6 +75,7 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("cache-control", "max-age=86400, stale-while-revalidate=300");
 	if (checkEtag(w, r, file)) {
 		return
 	}
