@@ -73,6 +73,7 @@ func parseEpisodeName(name string, seasonHint int, ep *Episode) (ok bool) {
 			ep.SeasonNo = sn
 			ep.EpisodeNo = parseInt(s[2])
 		}
+		return
 	}
 
 	ok = false
