@@ -20,10 +20,10 @@ type Nfo struct {
 	Plot		string		`xml:"plot,omitempty" json:"plot,omitempty"`
 	Tagline		string		`xml:"tagline,omitempty" json:"tagline,omitempty"`
 	Premiered	string		`xml:"premiered,omitempty" json:"premiered,omitempty"`
-	Season		string		`xml:"season,omitempty" json:"premiered,omitempty"`
-	Episode		string		`xml:"episode,omitempty" json:"premiered,omitempty"`
-	Aired		string		`xml:"aired,omitempty" json:"premiered,omitempty"`
-	Studio		string		`xml:"studio,omitempty" json:"premiered,omitempty"`
+	Season		string		`xml:"season,omitempty" json:"season,omitempty"`
+	Episode		string		`xml:"episode,omitempty" json:"episode,omitempty"`
+	Aired		string		`xml:"aired,omitempty" json:"aired,omitempty"`
+	Studio		string		`xml:"studio,omitempty" json:"studio,omitempty"`
 	RatingString	string		`xml:"rating,omitempty" json:"-"`
 	Rating		float32		`xml:"-" json:"rating,omitempty"`
 	VotesString	string		`xml:"votes,omitempty" json:"-"`
