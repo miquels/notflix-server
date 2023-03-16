@@ -11,6 +11,7 @@ import (
 )
 
 type DbItem struct {
+	Id		string
 	Name		string
 	Votes		int
 	Genre		string
@@ -35,10 +36,16 @@ func dbInit(dbFile string) (err error) {
 	return
 }
 
-func dbInitSchema() (err error) {
+func dbInitSchema() (error) {
+	tx, err := dbHandle.Beginx()
+	if err != nil {
+		return err
+	}
+
 	schema := `
 	CREATE TABLE items(
-		name TEXT NOT NULL PRIMARY KEY,
+		id TEXT NOT NULL PRIMARY KEY
+		name TEXT NOT NULL PRIMARY,
 		votes INTEGER,
 		year INTEGER,
 		genre TEXT NOT NULL,
@@ -47,8 +54,21 @@ func dbInitSchema() (err error) {
 		firstvideo INTEGER NOT NULL,
 		lastvideo INTEGER NOT NULL
 	);`
-	_, err = dbHandle.Exec(schema)
-	return
+	_, err = tx.Exec(schema)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	index := "CREATE INDEX items_name_idx ON items (name);";
+	_, err = tx.Exec(index)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+	return err
 }
 
 // Check NFO file.
@@ -95,9 +115,9 @@ func itemCheckNfo (item *Item) (updated bool) {
 func dbInsertItem(tx *sqlx.Tx, item *Item) (err error) {
 	item.Genrestring = strings.Join(item.Genre, ",")
 	_, err = tx.NamedExec(
-	`INSERT INTO items(name, votes, genre, rating, year, nfotime, ` +
+	`INSERT INTO items(id, name, votes, genre, rating, year, nfotime, ` +
 	`		firstvideo, lastvideo)` +
-	`VALUES (:name, :votes, :genrestring, :rating, :year, :nfotime, ` +
+	`VALUES (:id, :name, :votes, :genrestring, :rating, :year, :nfotime, ` +
 	`		:firstvideo, :lastvideo)`, item)
 	return
 }
@@ -123,9 +143,10 @@ func dbLoadItem(coll *Collection, item *Item) {
 	// Not in database yet, insert
 	if err == sql.ErrNoRows {
 		itemCheckNfo(item)
+		// fmt.Printf("dbLoadItem: add to database: %s\n", item.Name)
 		err = dbInsertItem(tx, item)
 		if err != nil {
-			fmt.Printf("INSERT: error: %s\n", err)
+			fmt.Printf("dbLoadItem: INSERT: error: %s\n", err)
 			os.Exit(1)
 			tx.Rollback()
 			return
@@ -136,12 +157,14 @@ func dbLoadItem(coll *Collection, item *Item) {
 
 	// Error? Too bad.
 	if err != nil {
+		fmt.Printf("dbLoadItem (%s): %s\n", item.Name, err)
 		tx.Rollback()
 		return
 	}
 
 	needUpdate := false
 
+	item.Id = data.Id
 	item.Genre = strings.Split(data.Genre, ",")
 	item.Rating = data.Rating
 	item.Votes = data.Votes
@@ -173,6 +196,7 @@ func dbLoadItem(coll *Collection, item *Item) {
 	if needUpdate {
 		err = dbUpdateItem(tx, item)
 		if err != nil {
+			fmt.Printf("dbLoadItem %s: update: %s\n", item.Name, err)
 			tx.Rollback()
 			return
 		}

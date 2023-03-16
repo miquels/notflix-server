@@ -19,6 +19,7 @@ type Collection struct {
 // An 'item' can be a movie, a tv-show, a folder, etc.
 type Item struct {
 	// generic
+	Id		string		`json:"id"`
 	Name		string		`json:"name"`
 	Path		string		`json:"path"`
 	BaseUrl		string		`json:"baseurl"`
