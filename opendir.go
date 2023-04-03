@@ -8,7 +8,6 @@ import (
 	"errors"
 	"os"
 	"path"
-	"syscall"
 	"time"
 )
 
@@ -24,6 +23,7 @@ type FileInfo struct {
 	mode	os.FileMode
 	modtime	time.Time
 	createtime time.Time
+	sys	interface{}
 	isdir	bool
 	didstat	bool
 }
@@ -95,30 +95,13 @@ func (fi *FileInfo) Modtime() time.Time {
 	return fi.modtime
 }
 
-func (fi *FileInfo) Createtime() (t time.Time) {
-	if fi.createtime.IsZero() {
-		p := path.Join(fi.dir.name, fi.name)
-		s, err := os.Stat(p)
-		if err != nil {
-			return
-		}
-		fi.set(s)
-		stat, ok := s.Sys().(*syscall.Stat_t)
-		if !ok {
-			return
-		}
-		nsec := syscall.TimespecToNsec(stat.Ctimespec)
-		fi.createtime = time.Unix(0, nsec)
-		if fi.modtime.Before(fi.createtime) {
-			fi.createtime = fi.modtime
-		}
-	}
-	t = fi.createtime
-	return
+func (fi *FileInfo) Createtime() time.Time {
+	fi.stat()
+	return fi.createtime
 }
 
 func (fi *FileInfo) CreatetimeMS() int64 {
-	fi.Createtime()
+	fi.stat()
 	return fi.createtime.UnixNano() / 1000000
 }
 
@@ -145,12 +128,15 @@ func (fi *FileInfo) set(s os.FileInfo) {
 	fi.mode = s.Mode()
 	fi.modtime = s.ModTime()
 	fi.isdir = s.IsDir()
+	fi.sys = s.Sys()
+	fi.setCreatetime()
 	fi.didstat = true
 	return
 }
 
 
 func (fi *FileInfo) Sys() interface{} {
-	return nil
+	fi.stat()
+	return fi.sys
 }
 
