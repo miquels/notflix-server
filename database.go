@@ -144,9 +144,12 @@ func dbLoadItem(coll *Collection, item *Item) {
 	if err == sql.ErrNoRows {
 		itemCheckNfo(item)
 		// fmt.Printf("dbLoadItem: add to database: %s\n", item.Name)
+		item.Id = idHash(item.Name)
 		err = dbInsertItem(tx, item)
 		if err != nil {
-			fmt.Printf("dbLoadItem: INSERT: error: %s\n", err)
+			// INSERT: error: UNIQUE constraint failed: items.id
+			// if strings.Contains(err.Error(), "UNIQUE constraint") {
+			fmt.Printf("dbLoadItem: INSERT: name=%s, id=%s: error: %s\n", item.Name, item.Id, err)
 			os.Exit(1)
 			tx.Rollback()
 			return

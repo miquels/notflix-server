@@ -7,10 +7,10 @@ import (
 )
 
 type Collection struct {
+	SourceId	int		`json:"id"`
 	Name_		string		`json:"name"`
 	Type		string		`json:"type"`
 	Items		[]*Item		`json:"items,omitempty"`
-	SourceId	int		`json:"-"`
 	Directory	string		`json:"-"`
 	BaseUrl		string		`json:"-"`
 	HlsServer	string		`json:"-"`
@@ -143,8 +143,13 @@ func initCollections() {
 }
 
 func getCollection(collName string) (c *Collection) {
+	sourceId := -1;
+	if n, err := strconv.Atoi(collName); err == nil {
+		sourceId = n;
+	}
 	for n := range config.Collections {
-		if (config.Collections[n].Name_ == collName) {
+		if (config.Collections[n].Name_ == collName ||
+		    config.Collections[n].SourceId == sourceId) {
 			c = &(config.Collections[n])
 			return
 		}
@@ -158,7 +163,7 @@ func getItem(collName string, itemName string) (i *Item) {
 		return
 	}
 	for _, n := range c.Items {
-		if n.Name == itemName {
+		if n.Name == itemName || n.Id == itemName {
 			i = n
 			return
 		}
