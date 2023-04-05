@@ -37,7 +37,7 @@ type Nfo struct {
 	Banner		[]Thumb		`xml:"banner,omitempty" json:"banner,omitempty"`
 	Discart		[]Thumb		`xml:"discart,omitempty" json:"discart,omitempty"`
 	Logo		[]Thumb		`xml:"logo,omitempty" json:"logo,omitempty"`
-	VidFileInfo	*VidFileInfo	`xml:"fileinfo,omitempty" json:"fileinfo,omitempty"`
+//	VidFileInfo	*VidFileInfo	`xml:"fileinfo,omitempty" json:"fileinfo,omitempty"`
 }
 
 type Thumb struct {
@@ -49,6 +49,7 @@ type Actor struct {
 	Role		string		`xml:"role,omitempty" json:"role,omitempty"`
 }
 
+/*
 type VidFileInfo struct {
 	StreamDetails	*StreamDetails	`xml:"streamdetails,omitempty" json:"streamdetails,omitempty"`
 }
@@ -61,19 +62,25 @@ type VideoDetails struct {
 	Width		int		`xml:"width,omitempty" json:"width,omitempty"`
 	Height		int		`xml:"height,omitempty" json:"height,omitempty"`
 }
+*/
 
 func decodeNfo(r io.ReadSeeker) (nfo *Nfo) {
 	// this is a really dirty hack to partially support <xbmcmultiepisode>
 	// for now. It just skips the tag and as a result parses just
 	// the first episode in the multiepisode list.
-	buf := make([]byte, 18, 18)
-	n, err := r.Read(buf)
-	if n != 18 || string(buf) != "<xbmcmultiepisode>" {
-		r.Seek(0, 0)
+	buf, err := io.ReadAll(r)
+	if err != nil || len(buf) < 18 {
+		return nil
+	}
+	if string(buf[:18]) == "<xbmcmultiepisode>" {
+		buf = buf[18:]
 	}
 
+	// as we're going to encode to JSON, make sure it's valid UTF-8
+	txt := strings.ToValidUTF8(string(buf), "�");
+
 	data := &Nfo{}
-	d := xml.NewDecoder(r)
+	d := xml.NewDecoder(strings.NewReader(txt))
 	d.Strict = false
 	d.AutoClose = xml.HTMLAutoClose
 	d.Entity = xml.HTMLEntity
