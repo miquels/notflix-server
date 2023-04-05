@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 	"encoding/json"
 	"net/http"
 
@@ -82,6 +83,20 @@ func itemsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "404 Not Found", http.StatusNotFound)
 		return
 	}
+
+	var lastVideo int64
+	for i := range c.Items {
+		if c.Items[i].LastVideo > lastVideo {
+			lastVideo = c.Items[i].LastVideo
+		}
+	}
+	if lastVideo > 0 && checkEtagObj(w, r, time.UnixMilli(lastVideo)) {
+		return
+	}
+	if r.Method == "HEAD" {
+		return;
+	}
+
 	// copy items
 	items := make([]Item, len(c.Items))
 	for i := range c.Items {
@@ -109,10 +124,23 @@ func itemHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if i.LastVideo > 0 && checkEtagObj(w, r, time.UnixMilli(i.LastVideo)) {
+		return
+	}
+	if r.Method == "HEAD" {
+		return;
+	}
+
+	r.ParseForm();
+	doNfo := true
+	if _, ok := r.Form["nonfo"]; ok {
+		doNfo = false
+	}
+
 	// decode base NFO into a copy of `item' because we don't want the
 	// nfo details to hang around in memory.
 	i2 := *i
-	if i2.NfoPath != "" {
+	if doNfo && i2.NfoPath != "" {
 		file, err := os.Open(i2.NfoPath)
 		if err == nil {
 			i2.Nfo = decodeNfo(file)
@@ -126,12 +154,15 @@ func itemHandler(w http.ResponseWriter, r *http.Request) {
 		copy(i2.Seasons[si].Episodes, i.Seasons[si].Episodes)
 		for ei := range i2.Seasons[si].Episodes {
 			ep := i2.Seasons[si].Episodes[ei]
-			if ep.NfoPath != "" {
-				file, err := os.Open(ep.NfoPath)
-				if err == nil {
-					ep.Nfo = decodeNfo(file)
-					file.Close()
-					i2.Seasons[si].Episodes[ei] = ep
+			if doNfo {
+				if ep.NfoPath != "" {
+					file, err := os.Open(ep.NfoPath)
+					if err == nil {
+						ep2 := ep
+						ep2.Nfo = decodeNfo(file)
+						file.Close()
+						i2.Seasons[si].Episodes[ei] = ep2
+					}
 				}
 			}
 		}
